@@ -1,0 +1,49 @@
+pragma solidity ^0.4.18;
+contract Election { //投票类
+struct Candidate{
+	string name;
+	uint voteCount;
+}
+
+struct Voter { //投票人
+bool voted; //该投票人是否投票，true表示已投票，false表示未投票
+uint voteto; //给谁(提案索引号)投票
+uint weight;
+}
+
+address public chairperson; // 投票主持人
+mapping(address => Voter) voters; //声明一个状态变量voters，保存每个独立地址的Voter结构体
+Candidate[] public candidates;
+uint public voteendtime;
+string electionName;
+
+function Election(string name,uint durationMinutes,string candidate1,string candidate2) {
+	chairperson = msg.sender; 
+	electionName=name;
+	voteendtime=now+(durationMinutes*1 minutes);
+candidates.push(Candidate(candidate1,0));
+candidates.push(Candidate(candidate2,0));
+}
+
+function giveRightToVote(address voter) public {
+require((msg.sender == chairperson) && !voters[voter].voted); //若合约发送者不是主持人或者投票者已经投票，则返回
+voters[voter].weight = 1; // 给每个投票者各自投票权限
+}
+
+function vote(uint voteto)  {
+require(now<voteendtime);
+require(!voters[msg.sender].voted);
+voters[msg.sender].voted=true;
+voters[msg.sender].voteto=voteto;
+candidates[voteto].voteCount+=voters[msg.sender].weight;
+}
+event ElectionResult(string name,uint voteCount);
+
+function end(){
+	require(msg.sender==chairperson);
+	require(now>=voteendtime);
+	for(uint i=0;i<candidates.length;i++){
+    ElectionResult(candidates [i].name,candidates [i].voteCount);
+	}
+}
+}
